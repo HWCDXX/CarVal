@@ -58,6 +58,7 @@ if st.button("Generate Asset Valuation", type="primary"):
     if production_model is None or production_scaler is None:
         st.error("Execution blocked. Loaded pipeline elements are empty.")
     else:
+        # 1. Base feature dictionary matching your exact categorical layout
         raw_feature_map = {
             'Mileage': mileage,
             'EngineV': engine_v,
@@ -78,13 +79,23 @@ if st.button("Generate Asset Valuation", type="primary"):
             'Registration_yes': int(registered == "Yes")
         }
         
-        log_mileage_input = np.log1p(mileage)
-        raw_feature_map['Log_Mileage'] = log_mileage_input
-        raw_feature_map['Log_Mileage_x_Mercedes'] = log_mileage_input * raw_feature_map['Brand_Mercedes-Benz']
-        raw_feature_map['Log_Mileage_x_BMW'] = log_mileage_input * raw_feature_map['Brand_BMW']
-        raw_feature_map['Log_Mileage_x_Renault'] = log_mileage_input * raw_feature_map['Brand_Renault']
+        # 2. FIXED: Generate the exact raw interaction features your scaler expects
+        raw_feature_map['With_Mileage'] = mileage  # Fallback check if needed by architecture
+        raw_feature_map['Mileage_x_BMW'] = mileage * raw_feature_map['Brand_BMW']
+        raw_feature_map['Mileage_x_Mercedes'] = mileage * raw_feature_map['Brand_Mercedes-Benz']
+        raw_feature_map['Mileage_x_Renault'] = mileage * raw_feature_map['Brand_Renault']
         
+        # Convert map to DataFrame
         df_user_input = pd.DataFrame([raw_feature_map])
+        
+        # 3. CRITICAL SAFEGUARD: Force the DataFrame columns into the exact order seen during fit()
+        try:
+            if hasattr(production_scaler, 'feature_names_in_'):
+                df_user_input = df_user_input[production_scaler.feature_names_in_]
+        except KeyError as e:
+            st.error(f"🚨 Preprocessing Error: Expected column alignment mismatch. Missing: {e}")
+        
+        # 4. Safe transform and inference execution
         scaled_user_input = production_scaler.transform(df_user_input)
         log_price_prediction = production_model.predict(scaled_user_input)
         calculated_market_value = np.exp(log_price_prediction)[0]
