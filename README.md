@@ -1,4 +1,4 @@
-# 📊 CarVal | Project Briefing & Production Manifest
+# 📊 CarVal | Project Overview
 
 ---
 
