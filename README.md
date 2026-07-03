@@ -2,7 +2,7 @@
 
 ---
 
-## 1. App Name & Purpose
+## 1. Objective
 * **App Name:** `CarVal Asset Pricing Portal`
 * **Core Purpose:** A high-performance, containerized web application that replaces manual "guesswork" car appraisals with real-time, data-driven wholesale valuations. It serves as an automated safeguard for dealership acquisition networks, ensuring trade-in quotes insulate company cash flow against market volatility.
 
