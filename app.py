@@ -105,4 +105,3 @@ if st.button("Generate Asset Valuation", type="primary"):
         
         st.markdown("---")
         st.success(f"### 🎯 Calculated Market Price Valuation: **${calculated_market_value:,.2f}**")
-            st.error(f"🚨 Matrix Transformation Error: {e}")
