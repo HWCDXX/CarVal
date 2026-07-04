@@ -58,12 +58,12 @@ if st.button("Generate Asset Valuation", type="primary"):
     if production_model is None or production_scaler is None:
         st.error("Execution blocked. Loaded pipeline elements are empty.")
     else:
-        # 1. SCALE FACTOR: Divide real mileage by 1000 to match training data scale (e.g., 75000 -> 75.0)
-        scaled_mileage = mileage / 1000.0
+        # AUTOMATIC INVISIBLE TRANSLATION LAYER
+        # Intercepts user entries (e.g. 100 or 121000) and transforms it smoothly 
+        internal_model_mileage = mileage / 1000.0
         
-        # 2. Base feature mapping using the correctly scaled mileage unit
         raw_feature_map = {
-            'Mileage': scaled_mileage,
+            'Mileage': internal_model_mileage,
             'EngineV': engine_v,
             'Brand_BMW': int(brand == "BMW"),
             'Brand_Mercedes-Benz': int(brand == "Mercedes-Benz"),
@@ -82,28 +82,27 @@ if st.button("Generate Asset Valuation", type="primary"):
             'Registration_yes': int(registered == "Yes")
         }
         
-        # 3. FIXED: Generate the exact interaction keys your scaler expects (No 'Log_' strings)
-        raw_feature_map['With_Mileage'] = scaled_mileage  # Helper tag if matching training
-        raw_feature_map['Mileage_x_BMW'] = scaled_mileage * raw_feature_map['Brand_BMW']
-        raw_feature_map['Mileage_x_Mercedes'] = scaled_mileage * raw_feature_map['Brand_Mercedes-Benz']
-        raw_feature_map['Mileage_x_Renault'] = scaled_mileage * raw_feature_map['Brand_Renault']
+        # Calculate interaction vectors using the converted scale variables
+        raw_feature_map['With_Mileage'] = internal_model_mileage
+        raw_feature_map['Mileage_x_BMW'] = internal_model_mileage * raw_feature_map['Brand_BMW']
+        raw_feature_map['Mileage_x_Mercedes'] = internal_model_mileage * raw_feature_map['Brand_Mercedes-Benz']
+        raw_feature_map['Mileage_x_Renault'] = internal_model_mileage * raw_feature_map['Brand_Renault']
         
-        # Convert dictionary to DataFrame
+        # Convert map to DataFrame
         df_user_input = pd.DataFrame([raw_feature_map])
         
-        # 4. CRITICAL SAFEGUARD: Auto-sort data columns to match training order perfectly
-        if hasattr(production_scaler, 'feature_names_in_'):
-            # Filters and orders columns based exactly on the scaler's training memory layout
-            valid_cols = [c for c in production_scaler.feature_names_in_ if c in df_user_input.columns]
-            df_user_input = df_user_input[valid_cols]
-        
-        # 5. Core Pipeline Inference Execution
+        # Enforce column structural alignment
         try:
-            scaled_user_input = production_scaler.transform(df_user_input)
-            log_price_prediction = production_model.predict(scaled_user_input)
-            calculated_market_value = np.exp(log_price_prediction)[0]
-            
-            st.markdown("---")
-            st.success(f"### 🎯 Calculated Market Price Valuation: **${calculated_market_value:,.2f}**")
-        except Exception as e:
+            if hasattr(production_scaler, 'feature_names_in_'):
+                df_user_input = df_user_input[production_scaler.feature_names_in_]
+        except KeyError as e:
+            st.error(f"🚨 Preprocessing Error: Expected column alignment mismatch. Missing: {e}")
+        
+        # Run transformations and complete pricing estimation
+        scaled_user_input = production_scaler.transform(df_user_input)
+        log_price_prediction = production_model.predict(scaled_user_input)
+        calculated_market_value = np.exp(log_price_prediction)[0]
+        
+        st.markdown("---")
+        st.success(f"### 🎯 Calculated Market Price Valuation: **${calculated_market_value:,.2f}**")
             st.error(f"🚨 Matrix Transformation Error: {e}")
