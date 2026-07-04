@@ -96,4 +96,6 @@ The numbers prove the Stacking architecture won across every operational constra
 ├── app.py                                 # Streamlit UI & Production Inference Pipeline
 ├── audit_env.py                           # Toolchain & Environment Audit Automation Script
 └── README.md                              # Technical & Executive Documentation
+├── mainfile.ipynb                         # End to End Data pipeline workflow notebook
+├── requirements.txt                       # Package specififcations for Streamlit deployment   
 ```
